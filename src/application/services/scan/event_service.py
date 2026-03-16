@@ -3,6 +3,7 @@ from datetime import datetime
 from src.application.repositories.session import AbstractSessionRepository
 from src.application.repositories.ticket import AbstractTicketRepository
 from src.application.schemas.response import EventListItem, EventListResponse
+from src.core.config import settings
 from src.infrastructure.database.models.user import UserPermission
 
 
@@ -47,7 +48,7 @@ class EventService:
                 event_name=event.title,
                 category_id=event.category_id if hasattr(event, "category_id") else None,
                 category_name=event.category.title if hasattr(event, "category") and event.category else None,
-                image=event.image_path if hasattr(event, "image_path") else None,
+                image=f"{settings.storage_url}{event.image_path}" if hasattr(event, "image_path") and event.image_path else None,
                 date_time=session.date_time,
                 all_count=counts.get("all_count", 0),
                 scan_count=counts.get("scan_count", 0),

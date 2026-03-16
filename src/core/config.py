@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_issuer: str = "besoft:showgo"
 
+    storage_url: str = "https://api.sxodim.uz/storage/images/"
+
     default_country_code: str = "uz"
     default_country_id: int = 1
     time_zone_difference: int = 5
