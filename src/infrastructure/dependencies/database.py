@@ -1,0 +1,9 @@
+from typing import Annotated
+
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.infrastructure.database.session import get_session
+
+
+DBSession = Annotated[AsyncSession, Depends(get_session)]
