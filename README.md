@@ -58,12 +58,12 @@ src/
 
 Все остальные эндпоинты требуют `Authorization: Bearer <token>`:
 
-- `GET /api/v1/scan/event/list` — список сессий на сегодня
-- `POST /api/v1/scan/check` — сканирование билета (вход/выход)
-- `GET /api/v1/scan/ticket/list/{session_id}` — список билетов сессии
-- `GET /api/v1/scan/ticket/search/{session_id}/{ticket_number}` — поиск по номеру
-- `GET /api/v1/scan/ticket/search/by_mail/{session_id}/{email}` — поиск по email
-- `GET /api/v1/scan/statistics/{session_id}` — статистика продаж/сканирований
+- `GET /api/v1/event/list` — список сессий на сегодня
+- `POST /api/v1/check` — сканирование билета (вход/выход)
+- `GET /api/v1/ticket/list/{session_id}` — список билетов сессии
+- `GET /api/v1/ticket/search/{session_id}/{ticket_number}` — поиск по номеру
+- `GET /api/v1/ticket/search/by_mail/{session_id}/{email}` — поиск по email
+- `GET /api/v1/statistics/{session_id}` — статистика продаж/сканирований
 
 ## Логи
 

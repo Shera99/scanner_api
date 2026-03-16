@@ -11,7 +11,7 @@ from src.presentation.v1.scan import (
     statistics,
 )
 
-router = APIRouter(prefix="/scan", tags=["Scan"])
+router = APIRouter(tags=["Scan"])
 
 router.include_router(status.router)
 router.include_router(events.router)
