@@ -14,7 +14,7 @@ router = APIRouter()
 
 
 @router.post(
-    "",
+    "/auth",
     response_model=SuccessResponse[AuthResponse],
     summary="Аутентификация пользователя",
     description="Аутентификация по email и паролю. Возвращает данные пользователя и JWT токен.",
