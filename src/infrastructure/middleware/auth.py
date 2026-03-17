@@ -22,8 +22,7 @@ PUBLIC_PREFIXES = (
 )
 
 PUBLIC_EXACT_ROUTES: dict[tuple[str, str], bool] = {
-    ("POST", "/api/v1/auth/"): True,
-    ("POST", "/api/v1/auth"): True,
+    ("POST", "/api/v1/auth"): True
 }
 
 
