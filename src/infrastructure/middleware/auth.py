@@ -19,22 +19,19 @@ PUBLIC_PATHS = frozenset({
 
 PUBLIC_PREFIXES = (
     "/docs",
+    "/api/v1/auth",
 )
-
-PUBLIC_EXACT_ROUTES: frozenset[tuple[str, str]] = frozenset({
-    ("POST", "/api/v1/auth"),
-})
 
 
 def _is_public(method: str, path: str) -> bool:
     if method == "OPTIONS":
         return True
+    if path in PUBLIC_PATHS:
+        return True
     normalized = path.rstrip("/") or "/"
-    if normalized in PUBLIC_PATHS or path in PUBLIC_PATHS:
+    if normalized in PUBLIC_PATHS:
         return True
-    if any(path.startswith(prefix) for prefix in PUBLIC_PREFIXES):
-        return True
-    if (method, normalized) in PUBLIC_EXACT_ROUTES:
+    if any(normalized.startswith(p) for p in PUBLIC_PREFIXES):
         return True
     return False
 
