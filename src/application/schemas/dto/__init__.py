@@ -2,7 +2,7 @@
 from src.application.schemas.dto.user import UserDTO, PermissionDTO
 from src.application.schemas.dto.event import EventDTO, SessionDTO
 from src.application.schemas.dto.ticket import TicketDTO, TicketListItemDTO
-from src.application.schemas.dto.scan import ScanCheckDTO, ScanCountsDTO, StatisticDTO
+from src.application.schemas.dto.scan import ScanCheckDTO, ScanCountsDTO, StatisticDTO, ScanLogEntryDTO
 
 __all__ = [
     "UserDTO",
@@ -14,4 +14,5 @@ __all__ = [
     "ScanCheckDTO",
     "ScanCountsDTO",
     "StatisticDTO",
+    "ScanLogEntryDTO",
 ]

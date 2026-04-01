@@ -2,7 +2,9 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from src.core.enums.scan import ScanTypeEnum
 
 
 class EventListItem(BaseModel):
@@ -35,6 +37,13 @@ class ScanCountsResponse(BaseModel):
     out_count: int
 
 
+class ScanLogResponse(BaseModel):
+    """Scan log line in check result (date, type, scanner name)."""
+    date_scan: datetime
+    type_scan: ScanTypeEnum
+    full_name: str | None = None
+
+
 class CheckResultResponse(BaseModel):
     """Unified scan check result matching frontend LastCheckResult type."""
     status: Literal["allowed", "already_used", "error_invalid", "wrong_event"]
@@ -46,6 +55,7 @@ class CheckResultResponse(BaseModel):
     event_name: str | None = None
     event_date: str | None = None
     counts: ScanCountsResponse | None = None
+    scan_logs: list[ScanLogResponse] = Field(default_factory=list)
 
 
 class TicketListItem(BaseModel):

@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
+from src.application.schemas.dto.scan import ScanLogEntryDTO
 from src.core.enums.scan import ScanTypeEnum
 
 if TYPE_CHECKING:
@@ -26,4 +27,8 @@ class AbstractScanLogRepository(ABC):
         order_item_id: int,
         type_scan: ScanTypeEnum = ScanTypeEnum.in_,
     ) -> Optional["ScanLog"]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_logs_for_ticket(self, order_item_id: int) -> list[ScanLogEntryDTO]:
         raise NotImplementedError

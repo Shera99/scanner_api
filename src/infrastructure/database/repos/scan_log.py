@@ -6,8 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from src.application.repositories.scan_log import AbstractScanLogRepository
+from src.application.schemas.dto.scan import ScanLogEntryDTO
 from src.core.enums.scan import ScanTypeEnum
 from src.infrastructure.database.models.scan_log import ScanLog
+from src.infrastructure.database.models.user import User
 
 
 class ScanLogRepository(AbstractScanLogRepository):
@@ -48,3 +50,18 @@ class ScanLogRepository(AbstractScanLogRepository):
             .limit(1)
         )
         return result.scalars().first()
+
+    async def get_logs_for_ticket(self, order_item_id: int) -> list[ScanLogEntryDTO]:
+        stmt = (
+            select(
+                ScanLog.date_scan.label("date_scan"),
+                ScanLog.type_scan.label("type_scan"),
+                User.full_name.label("full_name"),
+            )
+            .join(User, ScanLog.user_id == User.id)
+            .where(ScanLog.order_item_id == order_item_id)
+            .order_by(ScanLog.date_scan.asc())
+        )
+        result = await self.session.execute(stmt)
+        rows = result.mappings().all()
+        return [ScanLogEntryDTO.model_validate(row) for row in rows]

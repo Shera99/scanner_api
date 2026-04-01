@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.repositories.scan_log import AbstractScanLogRepository
 from src.application.repositories.ticket import AbstractTicketRepository
-from src.application.schemas.response import CheckResultResponse, ScanCountsResponse
+from src.application.schemas.response import CheckResultResponse, ScanCountsResponse, ScanLogResponse
 from src.application.services.crypto import TicketCryptographyService
 from src.core.config import settings
 from src.core.entities import ScanType, SCAN_TYPE_VALUES, SCAN_ALLOWED_MESSAGES, SCAN_ALREADY_USED_MESSAGES
@@ -48,12 +48,15 @@ class ScanCheckService:
                 time_zone_difference=time_zone_difference,
             )
 
+        scan_logs = await self._scan_logs_for_ticket(ticket.id)
+
         if ticket.is_refund:
             return CheckResultResponse(
                 status="error_invalid",
                 message="ОШИБКА / НЕДЕЙСТВИТЕЛЕН",
                 reason="Билет отменен (возврат)",
                 place=ticket.title,
+                scan_logs=scan_logs,
             )
 
         if ticket.order and ticket.order.status in ORDER_REJECT_REASONS:
@@ -62,6 +65,7 @@ class ScanCheckService:
                 message="ОШИБКА / НЕДЕЙСТВИТЕЛЕН",
                 reason=ORDER_REJECT_REASONS[ticket.order.status],
                 place=ticket.title,
+                scan_logs=scan_logs,
             )
 
         scan_value = SCAN_TYPE_VALUES[scan_type]
@@ -80,6 +84,7 @@ class ScanCheckService:
                 scanned_by=scanned_by,
                 event_name=event_name,
                 event_date=event_date,
+                scan_logs=scan_logs,
             )
 
         current_time = datetime.utcnow()
@@ -114,6 +119,7 @@ class ScanCheckService:
             counts=counts,
             event_name=event_name,
             event_date=event_date,
+            scan_logs=scan_logs,
         )
 
     def _resolve_ticket_number(self, code: str | None, no_code: str | None) -> str:
@@ -153,12 +159,15 @@ class ScanCheckService:
         tz_diff = time_zone_difference or settings.time_zone_difference
         event_name, event_date = self._extract_event_info(ticket, tz_diff)
 
+        scan_logs = await self._scan_logs_for_ticket(ticket.id)
+
         return CheckResultResponse(
             status="wrong_event",
             message="НЕ ДЛЯ ЭТОГО МЕРОПРИЯТИЯ",
             event_name=event_name,
             event_date=event_date,
             place=ticket.title,
+            scan_logs=scan_logs,
         )
 
     async def _get_first_scan_info(
@@ -175,3 +184,7 @@ class ScanCheckService:
         first_check_in = adjusted.strftime("%H:%M:%S")
         scanned_by = log.user.full_name if log.user else None
         return first_check_in, scanned_by
+
+    async def _scan_logs_for_ticket(self, order_item_id: int) -> list[ScanLogResponse]:
+        logs = await self.scan_log_repo.get_logs_for_ticket(order_item_id)
+        return [ScanLogResponse.model_validate(log) for log in logs]
