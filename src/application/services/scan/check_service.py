@@ -9,7 +9,7 @@ from src.application.services.crypto import TicketCryptographyService
 from src.core.config import settings
 from src.core.entities import ScanType, SCAN_TYPE_VALUES, SCAN_ALLOWED_MESSAGES, SCAN_ALREADY_USED_MESSAGES
 from src.core.enums.order import ORDER_REJECT_REASONS
-from src.core.enums.scan import ScanTypeEnum, SCAN_LOG_TYPE
+from src.core.enums.scan import ScanTypeEnum, SCAN_LOG_TYPE, ERROR_SCAN_LOG_TYPE
 from src.core.exceptions import BadRequestException
 
 
@@ -76,6 +76,16 @@ class ScanCheckService:
             first_check_in, scanned_by = await self._get_first_scan_info(
                 ticket.id, tz_diff, SCAN_LOG_TYPE[scan_value],
             )
+
+            current_time = datetime.utcnow()
+            await self.scan_log_repo.create_log(
+                user_id=user_id,
+                order_item_id=ticket.id,
+                date_scan=current_time,
+                type_scan=ERROR_SCAN_LOG_TYPE[scan_value],
+            )
+            await self.db_session.commit()
+            
             return CheckResultResponse(
                 status="already_used",
                 message=SCAN_ALREADY_USED_MESSAGES[scan_value],
@@ -187,4 +197,4 @@ class ScanCheckService:
 
     async def _scan_logs_for_ticket(self, order_item_id: int) -> list[ScanLogResponse]:
         logs = await self.scan_log_repo.get_logs_for_ticket(order_item_id)
-        return [ScanLogResponse.model_validate(log) for log in logs]
+        return [ScanLogResponse.model_validate(log.model_dump()) for log in logs]

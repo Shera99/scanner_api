@@ -24,9 +24,11 @@ db_url = URL.create(
 engine = create_async_engine(
     db_url,
     connect_args={
-        "ssl": ssl_ctx,
         "command_timeout": 10,
-        "server_settings": {"statement_timeout": "30000"},
+        "statement_cache_size": 0,
+        # "ssl": ssl_ctx,
+        # "command_timeout": 10,
+        # "server_settings": {"statement_timeout": "30000"},
     },
     pool_pre_ping=False,
     pool_size=5,
