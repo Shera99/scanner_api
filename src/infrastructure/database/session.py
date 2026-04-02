@@ -30,11 +30,11 @@ engine = create_async_engine(
         # "command_timeout": 10,
         # "server_settings": {"statement_timeout": "30000"},
     },
-    pool_pre_ping=False,
-    pool_size=5,
-    max_overflow=10,
+    pool_pre_ping=True,
+    pool_size=1,
+    max_overflow=0,
     pool_timeout=30,
-    pool_recycle=1800,
+    pool_recycle=300,
 )
 
 AsyncSessionLocal = async_sessionmaker(
