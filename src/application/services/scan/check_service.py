@@ -37,16 +37,29 @@ class ScanCheckService:
     ) -> CheckResultResponse:
         ticket_number = self._resolve_ticket_number(code, no_code)
 
-        ticket = await self.ticket_repo.get_ticket_by_session_and_serial(
-            session_id=session_id,
-            serial_number=ticket_number,
-        )
+        ticket = await self.ticket_repo.get_ticket_by_serial(ticket_number)
 
         if ticket is None:
-            return await self._handle_ticket_not_in_session(
-                serial_number=ticket_number,
-                time_zone_difference=time_zone_difference,
+            return CheckResultResponse(
+                status="error_invalid",
+                message="ОШИБКА / НЕДЕЙСТВИТЕЛЕН",
+                reason="Билет не найден",
             )
+
+        # Проверка session_id: разрешаем если совпадает или если билет из сессии 1480
+        if ticket.session_id != session_id:
+            if ticket.session_id != 1480:
+                tz_diff = time_zone_difference or settings.time_zone_difference
+                event_name, event_date = self._extract_event_info(ticket, tz_diff)
+                scan_logs = await self._scan_logs_for_ticket(ticket.id)
+                return CheckResultResponse(
+                    status="wrong_event",
+                    message="НЕ ДЛЯ ЭТОГО МЕРОПРИЯТИЯ",
+                    event_name=event_name,
+                    event_date=event_date,
+                    place=ticket.title,
+                    scan_logs=scan_logs,
+                )
 
         scan_logs = await self._scan_logs_for_ticket(ticket.id)
 
