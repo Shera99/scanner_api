@@ -29,6 +29,7 @@ class ScanLogRepository(AbstractScanLogRepository):
             order_item_id=order_item_id,
             date_scan=date_scan,
             type_scan=type_scan,
+            check_ticket='scanner'
         )
         self.session.add(log)
         await self.session.flush()
@@ -45,6 +46,7 @@ class ScanLogRepository(AbstractScanLogRepository):
             .where(
                 ScanLog.order_item_id == order_item_id,
                 ScanLog.type_scan == type_scan,
+                ScanLog.check_ticket == 'scanner'
             )
             .order_by(ScanLog.date_scan.asc())
             .limit(1)
@@ -59,7 +61,7 @@ class ScanLogRepository(AbstractScanLogRepository):
                 User.full_name.label("full_name"),
             )
             .join(User, ScanLog.user_id == User.id)
-            .where(ScanLog.order_item_id == order_item_id)
+            .where(ScanLog.order_item_id == order_item_id, ScanLog.check_ticket == 'scanner')
             .order_by(ScanLog.date_scan.asc())
         )
         result = await self.session.execute(stmt)

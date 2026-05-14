@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, DateTime, ForeignKey
+from sqlalchemy import Integer, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import ENUM as PgEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -26,6 +26,7 @@ class ScanLog(Base):
         default=ScanTypeEnum.in_,
         server_default="IN",
     )
+    check_ticket: Mapped[str] = mapped_column(String, nullable=False)
 
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
     order_item: Mapped["OrderItem"] = relationship("OrderItem", foreign_keys=[order_item_id])

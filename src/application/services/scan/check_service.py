@@ -46,9 +46,9 @@ class ScanCheckService:
                 reason="Билет не найден",
             )
 
-        # Проверка session_id: разрешаем если совпадает или если билет из сессии 1480
+        # Проверка session_id: разрешаем если совпадает или если билет из сессии
         if ticket.session_id != session_id:
-            if ticket.session_id != 1480:
+            if ticket.session_id != 3816:
                 tz_diff = time_zone_difference or settings.time_zone_difference
                 event_name, event_date = self._extract_event_info(ticket, tz_diff)
                 scan_logs = await self._scan_logs_for_ticket(ticket.id)
