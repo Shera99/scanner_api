@@ -48,7 +48,7 @@ class ScanCheckService:
 
         # Проверка session_id: разрешаем если совпадает или если билет из сессии
         if ticket.session_id != session_id:
-            if ticket.session_id != 3816:
+            if ticket.session_id != 3936 and ticket.ticket_type_id != 1598:
                 tz_diff = time_zone_difference or settings.time_zone_difference
                 event_name, event_date = self._extract_event_info(ticket, tz_diff)
                 scan_logs = await self._scan_logs_for_ticket(ticket.id)
