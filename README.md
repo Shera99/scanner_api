@@ -29,6 +29,9 @@ python run.py
 | Переменная | Описание |
 |---|---|
 | `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Подключение к PostgreSQL |
+| `DB_PGBOUNCER` | `true`, если перед БД стоит pgbouncer в transaction-режиме (KZ). Отключает кэши prepared statements и включает уникальные имена для них. Для прямого подключения к Postgres — `false` (по умолчанию) |
+| `DB_POOL_SIZE` | Размер пула соединений (по умолчанию `10`) |
+| `DB_MAX_OVERFLOW` | Сколько соединений можно открыть сверх пула (по умолчанию `10`). Потолок от сервиса = `DB_POOL_SIZE + DB_MAX_OVERFLOW`; сверять с `max_client_conn` у pgbouncer либо с `max_connections` у Postgres |
 | `SECRET_KEY` | Ключ для подписи JWT |
 | `ACCESS_TOKEN_EXPIRE_DAYS` | Срок жизни токена (дни) |
 | `DEFAULT_COUNTRY_CODE` | Код страны по умолчанию (`uz`) |

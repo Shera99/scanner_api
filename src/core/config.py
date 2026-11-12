@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     db_password: str = ""
     db_name: str = ""
 
+    # True, если перед БД стоит pgbouncer в transaction-режиме (KZ).
+    # Отключает кэши prepared statements и включает уникальные имена для них.
+    # Для прямого подключения к Postgres оставить False — кэш работает и быстрее.
+    db_pgbouncer: bool = False
+    # Потолок одновременных соединений от сервиса = db_pool_size + db_max_overflow.
+    # Сверять с max_client_conn у pgbouncer либо с max_connections у Postgres.
+    db_pool_size: int = 10
+    db_max_overflow: int = 10
+
     secret_key: str = ""
     access_token_expire_days: int = 300
     jwt_algorithm: str = "HS256"

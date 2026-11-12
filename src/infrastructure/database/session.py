@@ -1,5 +1,6 @@
 import ssl
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
 from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
@@ -21,18 +22,36 @@ db_url = URL.create(
     database=settings.db_name,
 )
 
+_connect_args: dict = {
+    "command_timeout": 10,
+    # "ssl": ssl_ctx,
+    # "server_settings": {"statement_timeout": "30000"},
+}
+
+# Настройки prepared statements зависят от того, что стоит перед БД.
+# При прямом подключении к Postgres кэши оставляем включёнными — так быстрее.
+if settings.db_pgbouncer:
+    # Кэшей prepared statements два, и они независимы:
+    #   statement_cache_size          — собственный кэш asyncpg;
+    #   prepared_statement_cache_size — кэш шима asyncpg внутри SQLAlchemy.
+    # Отключать нужно оба: одного первого недостаточно.
+    _connect_args["statement_cache_size"] = 0
+    _connect_args["prepared_statement_cache_size"] = 0
+    # asyncpg нумерует statements последовательно (__asyncpg_stmt_1__, _2__, ...).
+    # В transaction-режиме несколько клиентских соединений делят одно серверное,
+    # из-за чего имена конфликтуют ("prepared statement already exists").
+    # Уникальное имя на каждый statement убирает коллизии.
+    _connect_args["prepared_statement_name_func"] = lambda: f"__asyncpg_{uuid4()}__"
+
 engine = create_async_engine(
     db_url,
-    connect_args={
-        "command_timeout": 10,
-        "statement_cache_size": 0,
-        # "ssl": ssl_ctx,
-        # "command_timeout": 10,
-        # "server_settings": {"statement_timeout": "30000"},
-    },
+    connect_args=_connect_args,
     pool_pre_ping=True,
-    pool_size=1,
-    max_overflow=0,
+    # Прежний pool_size=1 заставлял сервис выполнять ровно один запрос за раз:
+    # остальные запросы ждали в QueuePool до pool_timeout и падали с
+    # "QueuePool limit of size 1 overflow 0 reached".
+    pool_size=settings.db_pool_size,
+    max_overflow=settings.db_max_overflow,
     pool_timeout=30,
     pool_recycle=300,
 )
