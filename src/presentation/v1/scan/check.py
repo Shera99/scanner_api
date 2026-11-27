@@ -21,7 +21,8 @@ router = APIRouter()
     description=(
         "Проверяет валидность билета и отмечает его как отсканированный. "
         "Всегда возвращает 200 с полем `status`: "
-        "`allowed`, `already_used`, `error_invalid`, `wrong_event`."
+        "`allowed`, `already_used`, `error_invalid`, `wrong_event`. "
+        "Билет из другой зоны — `error_invalid` с `error_code: wrong_zone`."
     ),
     responses={
         200: {
@@ -79,6 +80,19 @@ router = APIRouter()
                                 },
                             },
                         },
+                        "wrong_zone": {
+                            "summary": "Билет из другой зоны",
+                            "value": {
+                                "success": True,
+                                "data": {
+                                    "status": "error_invalid",
+                                    "message": "ДРУГАЯ ЗОНА",
+                                    "reason": "Билет не для зоны «Фан-зона»",
+                                    "error_code": "wrong_zone",
+                                    "place": "Сектор A · Ряд 5 · Место 18",
+                                },
+                            },
+                        },
                     }
                 }
             },
@@ -106,6 +120,8 @@ async def check_ticket(
             code=request.data.code,
             no_code=request.data.no_code,
             time_zone_difference=time_zone_diff,
+            account_zone=auth.scan_zone,
+            requested_zone=request.data.zone,
         )
         return SuccessResponse(data=response)
     except AppException as e:

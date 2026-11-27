@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import Integer, DateTime, ForeignKey, String
-from sqlalchemy.dialects.postgresql import ENUM as PgEnum
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums.scan import ScanTypeEnum
@@ -27,6 +27,10 @@ class ScanLog(Base):
         server_default="IN",
     )
     check_ticket: Mapped[str] = mapped_column(String, nullable=False)
+    # Свободные подробности скана: сеанс, зона, исход. Новые поля добавляются
+    # сюда без миграций. Колонка есть не во всех базах, поэтому deferred:
+    # пишется и читается только при settings.scan_zone_columns.
+    payload: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, deferred=True)
 
     user: Mapped["User"] = relationship("User", foreign_keys=[user_id])
     order_item: Mapped["OrderItem"] = relationship("OrderItem", foreign_keys=[order_item_id])

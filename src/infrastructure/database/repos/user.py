@@ -4,6 +4,7 @@ from sqlalchemy import select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.application.repositories.user import AbstractUserRepository, SCANNER_ROLES
+from src.core.config import settings
 from src.infrastructure.database.models.user import User, UserPermission
 from src.infrastructure.database.repos.base import BaseRepository
 
@@ -69,3 +70,13 @@ class UserRepository(BaseRepository[User], AbstractUserRepository):
             select(UserPermission).where(UserPermission.id == permission_id)
         )
         return result.scalars().first()
+
+    async def get_session_scan_zones(self, session_id: int) -> list[dict]:
+        if not settings.scan_zone_columns:
+            return []
+        result = await self.session.execute(
+            select(UserPermission.scan_zone)
+            .where(UserPermission.scan_zone["session_ids"].contains([session_id]))
+            .order_by(UserPermission.id)
+        )
+        return [zone for zone in result.scalars().all() if zone]

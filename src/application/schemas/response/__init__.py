@@ -8,11 +8,17 @@ from src.application.schemas.response.scan import (
     EventListResponse,
     ScanCountsResponse,
     ScanLogResponse,
+    ScanAttemptsResponse,
     CheckResultResponse,
     TicketListItem,
     TicketListResponse,
     TicketResponse,
     StatisticResponse,
+    ZoneCounts,
+    ZoneNamedOption,
+    ZoneSectorOption,
+    ZoneTicketOption,
+    ZoneStatisticResponse,
 )
 
 __all__ = [
@@ -25,9 +31,15 @@ __all__ = [
     "EventListResponse",
     "ScanCountsResponse",
     "ScanLogResponse",
+    "ScanAttemptsResponse",
     "CheckResultResponse",
     "TicketListItem",
     "TicketListResponse",
     "TicketResponse",
     "StatisticResponse",
+    "ZoneCounts",
+    "ZoneNamedOption",
+    "ZoneSectorOption",
+    "ZoneTicketOption",
+    "ZoneStatisticResponse",
 ]

@@ -9,8 +9,11 @@ from src.core.entities.enums import (
     SCAN_ALLOWED_MESSAGES,
     SCAN_ALREADY_USED_MESSAGES,
 )
+from src.core.entities.zone import ScanZone, zone_for_session
 
 __all__ = [
+    "ScanZone",
+    "zone_for_session",
     "ScanType",
     "TicketScanStatus",
     "UserRole",

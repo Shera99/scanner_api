@@ -1,12 +1,18 @@
 import logging
+import time
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, undefer
 
+from src.infrastructure.database.features import db_features
 from src.infrastructure.database.models.country import Country
 from src.infrastructure.database.models.user import User, UserPermission
+from src.infrastructure.database.repos.user import UserRepository
+from src.core.entities.zone import ScanZone
 from src.core.enums.user import UserPermissionRoleEnum
 from src.core.config import settings
 from src.core.exceptions import (
@@ -51,10 +57,65 @@ class AuthContext:
         user: User,
         permission: UserPermission | None = None,
         country: Country | None = None,
+        scan_zone: ScanZone | None = None,
+        password_changed_at: datetime | None = None,
     ):
         self.user = user
         self.permission = permission
         self.country = country
+        self.scan_zone = scan_zone
+        self.password_changed_at = password_changed_at
+
+
+# Учётка контролёра нужна на каждый запрос сканера, а меняется редко: держим её
+# в памяти процесса. Правка прав или зоны в админке доходит до сканера не позже
+# чем через settings.auth_cache_ttl секунд.
+_AUTH_CACHE_MAX = 2048
+_auth_cache: dict[tuple[int, int], tuple[float, AuthContext]] = {}
+
+
+def _cached_auth(key: tuple[int, int]) -> AuthContext | None:
+    entry = _auth_cache.get(key)
+    if entry is not None and entry[0] > time.monotonic():
+        return entry[1]
+    return None
+
+
+def _cache_auth(key: tuple[int, int], auth: AuthContext) -> None:
+    if len(_auth_cache) >= _AUTH_CACHE_MAX:
+        _auth_cache.clear()
+    _auth_cache[key] = (time.monotonic() + settings.auth_cache_ttl, auth)
+
+
+async def _load_permission(session: AsyncSession, user_id: int, permission_id: int) -> UserPermission | None:
+    user = joinedload(UserPermission.user)
+    if db_features.password_changed_at:
+        user = user.undefer(User.password_changed_at)
+    options = [user]
+    if settings.scan_zone_columns:
+        options.append(undefer(UserPermission.scan_zone))
+
+    result = await session.execute(
+        select(UserPermission)
+        .options(*options)
+        .where(
+            UserPermission.id == permission_id,
+            UserPermission.user_id == user_id,
+        )
+    )
+    return result.scalars().first()
+
+
+def _reject_if_password_changed(auth: AuthContext, token_data: dict) -> None:
+    """Вход, выданный до смены пароля, не действует — правило то же, что в
+    showgo_api. Токен без времени выдачи (старый) считается выданным раньше,
+    но только у тех, кто пароль менял."""
+    if auth.password_changed_at is None:
+        return
+    issued_at = token_data.get("iat")
+    if issued_at is None or \
+            datetime.fromtimestamp(issued_at, tz=timezone.utc).replace(tzinfo=None) < auth.password_changed_at:
+        raise NotAuthorizedException("password_changed")
 
 
 async def get_current_user(
@@ -73,18 +134,37 @@ async def get_current_user(
     permission_id = token_data.get("permission_id")
 
     if permission_id:
-        from sqlalchemy.orm import joinedload
-        result = await session.execute(
-            select(UserPermission)
-            .options(joinedload(UserPermission.user))
-            .where(
-                UserPermission.id == permission_id,
-                UserPermission.user_id == user_id,
-            )
-        )
-        permission = result.scalars().first()
+        cache_key = (user_id, permission_id)
+        cached = _cached_auth(cache_key)
+        if cached is not None:
+            _reject_if_password_changed(cached, token_data)
+            return cached
+
+        permission = await _load_permission(session, user_id, permission_id)
+        if permission is None:
+            # Админка при правке сотрудника удаляет его права и создаёт заново:
+            # id из токена пропадает, хотя доступ остался. Берём действующее
+            # право — то же, что выдал бы новый вход, — и контролёр остаётся
+            # в приложении. Если доступ к сканеру сняли, права не найдётся.
+            current = await UserRepository(session).get_scanner_permission(user_id)
+            if current is not None:
+                permission = await _load_permission(session, user_id, current.id)
+
         if permission and permission.user:
-            return AuthContext(user=permission.user, permission=permission, country=country)
+            scan_zone = ScanZone.parse(permission.scan_zone) if settings.scan_zone_columns else None
+            auth = AuthContext(
+                user=permission.user,
+                permission=permission,
+                country=country,
+                scan_zone=scan_zone,
+                password_changed_at=permission.user.password_changed_at if db_features.password_changed_at else None,
+            )
+            if settings.auth_cache_ttl > 0:
+                session.expunge(permission.user)
+                session.expunge(permission)
+                _cache_auth(cache_key, auth)
+            _reject_if_password_changed(auth, token_data)
+            return auth
 
         logger.warning("Permission id=%s not found for user_id=%s", permission_id, user_id)
 
