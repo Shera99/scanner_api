@@ -3,8 +3,8 @@ from __future__ import annotations
 import datetime
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Integer, String, Boolean, Float, Date, ForeignKey
-from sqlalchemy.dialects.postgresql import ENUM as PgEnum
+from sqlalchemy import Integer, String, Boolean, Float, Date, DateTime, ForeignKey
+from sqlalchemy.dialects.postgresql import ENUM as PgEnum, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.core.enums.user import UserPermissionRoleEnum, GenderEnum
@@ -40,6 +40,10 @@ class User(Base):
     country_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("countries.id"), nullable=True)
     firebase_user_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    # Время последней смены пароля (UTC), ставит showgo_api. Колонка есть не во
+    # всех базах, поэтому deferred: читается только при db_features.password_changed_at.
+    password_changed_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True, deferred=True)
+
 
 class UserPermission(Base):
     __tablename__ = "user_permissions"
@@ -69,6 +73,10 @@ class UserPermission(Base):
     by_accountant_all: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     is_invitations_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     weekly_sales_amount: Mapped[float] = mapped_column(Float, default=0.0)
+
+    # Зона сканирования контролёра (формат — ScanZone). Колонка есть не во всех
+    # базах, поэтому deferred: читается только при settings.scan_zone_columns.
+    scan_zone: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, deferred=True)
 
     @property
     def is_partner(self) -> bool:

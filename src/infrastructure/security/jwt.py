@@ -29,10 +29,13 @@ def get_hashed_password(password: str) -> str:
 
 def create_access_token(data: dict[str, Any]) -> str:
     """Create JWT access token."""
+    now = datetime.now(tz=timezone.utc)
     payload = {
         **data,
         "iss": settings.jwt_issuer,
-        "exp": datetime.now(tz=timezone.utc) + timedelta(days=settings.access_token_expire_days),
+        # время выдачи: по нему входы, выданные до смены пароля, перестают действовать
+        "iat": now,
+        "exp": now + timedelta(days=settings.access_token_expire_days),
     }
     return jwt.encode(payload, settings.secret_key, algorithm=settings.jwt_algorithm)
 

@@ -35,3 +35,4 @@ class ScanLogEntryDTO(BaseModel):
     date_scan: datetime
     type_scan: ScanTypeEnum
     full_name: str | None = None
+    payload: dict | None = None

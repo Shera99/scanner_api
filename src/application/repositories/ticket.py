@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Optional, List, TYPE_CHECKING
 
 from src.application.repositories.base import IBaseRepository
+from src.core.entities.zone import ScanZone
 
 if TYPE_CHECKING:
     from src.infrastructure.database.models.order import OrderItem
@@ -23,6 +24,14 @@ class AbstractTicketRepository(IBaseRepository["OrderItem"], ABC):
         self,
         serial_number: str,
     ) -> Optional["OrderItem"]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_ticket_for_check(
+        self,
+        serial_number: str,
+    ) -> Optional["OrderItem"]:
+        """Билет для проверки на входе: только поля, нужные сканеру."""
         raise NotImplementedError
 
     @abstractmethod
@@ -49,7 +58,8 @@ class AbstractTicketRepository(IBaseRepository["OrderItem"], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_ticket_counts(self, session_id: int) -> dict:
+    async def get_ticket_counts(self, session_id: int, zone: ScanZone | None = None) -> dict:
+        """Счётчики сеанса; с зоной — только по билетам этой зоны."""
         raise NotImplementedError
 
     @abstractmethod
@@ -57,11 +67,18 @@ class AbstractTicketRepository(IBaseRepository["OrderItem"], ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_ticket_scan(
+    async def get_zone_breakdown(self, session_id: int) -> dict:
+        """Из чего можно собрать зону на сеансе: типы билетов, области схемы,
+        секторы и проданные билеты в разбивке по ним."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def mark_ticket_scanned(
         self,
-        ticket: "OrderItem",
-        checked: bool,
+        ticket_id: int,
         in_out: int,
         updated_at: datetime,
-    ) -> "OrderItem":
+    ) -> bool:
+        """Гасит билет одним запросом. False — билет уже отмечен этим же типом
+        скана (его успел провести другой сканер)."""
         raise NotImplementedError

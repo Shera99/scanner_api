@@ -1,7 +1,7 @@
 """Scan request schemas."""
 from pydantic import BaseModel, EmailStr, Field
 
-from src.core.entities import ScanType
+from src.core.entities import ScanType, ScanZone
 
 
 class ScanCheckData(BaseModel):
@@ -10,6 +10,10 @@ class ScanCheckData(BaseModel):
     type: ScanType = Field(..., description="Scan type: entry or exit")
     code: str | None = Field(None, description="Encrypted ticket code (QR)")
     no_code: str | None = Field(None, description="Plain ticket number")
+    zone: ScanZone | None = Field(
+        None,
+        description="Зона, выбранная контролёром в приложении. Не учитывается, если зона закреплена за учёткой",
+    )
 
 
 class ScanCheckRequest(BaseModel):

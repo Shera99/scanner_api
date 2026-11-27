@@ -59,7 +59,10 @@ async def get_events(
     event_service: EventService = Depends(get_event_service),
 ):
     try:
-        response = await event_service.get_events_for_permission(permission=auth.permission)
+        response = await event_service.get_events_for_permission(
+            permission=auth.permission,
+            account_zone=auth.scan_zone,
+        )
         return SuccessResponse(data=response)
     except AppException as e:
         logger.error(f"Events error: {e.message}")

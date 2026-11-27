@@ -1,3 +1,4 @@
+import logging
 import ssl
 from contextlib import asynccontextmanager
 from uuid import uuid4
@@ -6,7 +7,10 @@ from sqlalchemy import URL
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from src.core.config import settings
+from src.infrastructure.database.features import detect_db_features
 from src.infrastructure.database.models import Base
+
+logger = logging.getLogger(__name__)
 
 
 ssl_ctx = ssl.create_default_context()
@@ -71,6 +75,13 @@ async def get_session() -> AsyncSession:
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Отдельной транзакцией: сбой проверки не должен мешать сервису стартовать.
+    try:
+        async with engine.connect() as conn:
+            await detect_db_features(conn)
+    except Exception:
+        logger.exception("Не удалось проверить состав базы: необязательные колонки считаются отсутствующими")
 
 
 async def close_db():

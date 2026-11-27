@@ -78,6 +78,10 @@ class OrderItem(Base):
     ticket_type_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("ticket_types.id"), nullable=True)
     ticket_seat_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("ticket_seats.id"), nullable=True)
     # ticket_theater_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("theater_tickets.id"), nullable=True)
+    # Доп. опция сеанса (Fast Track и т.п.): позиция заказа, но не билет. Колонка
+    # есть не во всех базах, поэтому deferred: читается только при
+    # db_features.session_options.
+    session_option_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, deferred=True)
     session_id: Mapped[int] = mapped_column(Integer, ForeignKey("sessions.id"), nullable=False)
     html_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_refund: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
@@ -104,6 +108,7 @@ class OrderItem(Base):
     order: Mapped["Order"] = relationship("Order", back_populates="items")
     session: Mapped["Session"] = relationship("Session", back_populates="order_items")
     ticket_type: Mapped[Optional["TicketType"]] = relationship("TicketType")
+    ticket_seat: Mapped[Optional["TicketSeat"]] = relationship("TicketSeat")
 
     @property
     def title(self) -> str | None:

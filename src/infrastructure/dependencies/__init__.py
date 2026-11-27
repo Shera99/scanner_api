@@ -15,6 +15,7 @@ from src.infrastructure.dependencies.scan_di import (
     get_scan_check_service,
     get_ticket_service,
     get_statistic_service,
+    get_zone_service,
 )
 
 __all__ = [
@@ -32,4 +33,5 @@ __all__ = [
     "get_scan_check_service",
     "get_ticket_service",
     "get_statistic_service",
+    "get_zone_service",
 ]

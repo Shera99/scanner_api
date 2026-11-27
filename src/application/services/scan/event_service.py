@@ -4,6 +4,7 @@ from src.application.repositories.session import AbstractSessionRepository
 from src.application.repositories.ticket import AbstractTicketRepository
 from src.application.schemas.response import EventListItem, EventListResponse
 from src.core.config import settings
+from src.core.entities.zone import ScanZone, zone_for_session
 from src.infrastructure.database.models.user import UserPermission
 
 
@@ -20,6 +21,7 @@ class EventService:
     async def get_events_for_permission(
         self,
         permission: UserPermission,
+        account_zone: ScanZone | None = None,
     ) -> EventListResponse:
         current_time = datetime.utcnow()
         start_time = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -40,7 +42,12 @@ class EventService:
             if not event:
                 continue
 
-            counts = counts_map.get(session.id, {})
+            # У контролёра с закреплённой зоной счётчики — по билетам его зоны.
+            zone, zone_locked = zone_for_session(session.id, account_zone)
+            if zone is not None:
+                counts = await self.ticket_repo.get_ticket_counts(session.id, zone)
+            else:
+                counts = counts_map.get(session.id, {})
 
             event_item = EventListItem(
                 id=session.id,
@@ -56,6 +63,8 @@ class EventService:
                 address=event.theater.address.title if hasattr(event, "theater") and event.theater and hasattr(event.theater, "address") and event.theater.address else None,
                 inCount=counts.get("in_count", 0),
                 outCount=counts.get("out_count", 0),
+                zone=zone,
+                zone_locked=zone_locked,
             )
             events.append(event_item)
 

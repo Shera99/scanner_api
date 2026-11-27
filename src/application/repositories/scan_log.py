@@ -18,6 +18,7 @@ class AbstractScanLogRepository(ABC):
         order_item_id: int,
         date_scan: datetime,
         type_scan: ScanTypeEnum,
+        payload: dict | None = None,
     ) -> "ScanLog":
         raise NotImplementedError
 

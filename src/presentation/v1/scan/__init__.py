@@ -9,6 +9,7 @@ from src.presentation.v1.scan import (
     ticket_search,
     ticket_search_by_mail,
     statistics,
+    zone_statistic,
 )
 
 router = APIRouter(tags=["Scan"])
@@ -20,3 +21,4 @@ router.include_router(ticket_list.router)
 router.include_router(ticket_search.router)
 router.include_router(ticket_search_by_mail.router)
 router.include_router(statistics.router)
+router.include_router(zone_statistic.router)

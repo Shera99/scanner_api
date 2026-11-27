@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     default_country_id: int = 1
     time_zone_difference: int = 5
 
+    # True — только после того, как в общей базе появились колонки
+    # user_permissions.scan_zone и scan_logs.payload. Пока False, сервис к ним
+    # не обращается и работает на базе без этих колонок.
+    scan_zone_columns: bool = False
+    # Сколько секунд счётчики сеанса живут в памяти процесса. 0 — считать на каждый скан.
+    counts_cache_ttl: float = 3.0
+    # Сколько секунд учётка контролёра живёт в памяти процесса. 0 — читать на каждый запрос.
+    auth_cache_ttl: float = 30.0
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

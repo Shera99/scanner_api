@@ -7,6 +7,7 @@ from sqlalchemy.orm import joinedload
 
 from src.application.repositories.scan_log import AbstractScanLogRepository
 from src.application.schemas.dto.scan import ScanLogEntryDTO
+from src.core.config import settings
 from src.core.enums.scan import ScanTypeEnum
 from src.infrastructure.database.models.scan_log import ScanLog
 from src.infrastructure.database.models.user import User
@@ -23,6 +24,7 @@ class ScanLogRepository(AbstractScanLogRepository):
         order_item_id: int,
         date_scan: datetime,
         type_scan: ScanTypeEnum,
+        payload: dict | None = None,
     ) -> ScanLog:
         log = ScanLog(
             user_id=user_id,
@@ -31,6 +33,9 @@ class ScanLogRepository(AbstractScanLogRepository):
             type_scan=type_scan,
             check_ticket='scanner'
         )
+        # Колонку не трогаем, пока её нет в базе: незаданное поле в INSERT не попадает.
+        if payload and settings.scan_zone_columns:
+            log.payload = payload
         self.session.add(log)
         await self.session.flush()
         return log
@@ -54,12 +59,16 @@ class ScanLogRepository(AbstractScanLogRepository):
         return result.scalars().first()
 
     async def get_logs_for_ticket(self, order_item_id: int) -> list[ScanLogEntryDTO]:
+        columns = [
+            ScanLog.date_scan.label("date_scan"),
+            ScanLog.type_scan.label("type_scan"),
+            User.full_name.label("full_name"),
+        ]
+        if settings.scan_zone_columns:
+            columns.append(ScanLog.payload.label("payload"))
+
         stmt = (
-            select(
-                ScanLog.date_scan.label("date_scan"),
-                ScanLog.type_scan.label("type_scan"),
-                User.full_name.label("full_name"),
-            )
+            select(*columns)
             .join(User, ScanLog.user_id == User.id)
             .where(ScanLog.order_item_id == order_item_id, ScanLog.check_ticket == 'scanner')
             .order_by(ScanLog.date_scan.asc())

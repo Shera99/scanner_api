@@ -49,3 +49,8 @@ class AbstractUserRepository(IBaseRepository["User"], ABC):
     @abstractmethod
     async def get_permission_by_id(self, permission_id: int) -> Optional["UserPermission"]:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_session_scan_zones(self, session_id: int) -> list[dict]:
+        """Зоны, назначенные контролёрам на этот сеанс (сырой JSON из учёток)."""
+        raise NotImplementedError
